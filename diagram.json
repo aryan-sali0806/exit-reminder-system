@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "author": "Smart Exit Reminder",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir",
+      "top": -90,
+      "left": 240,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz",
+      "top": 80,
+      "left": 290,
+      "attrs": { "volume": "0.1" }
+    },
+    {
+      "type": "wokwi-ssd1306",
+      "id": "oled",
+      "top": -90,
+      "left": -200,
+      "attrs": { "address": "0x3c" }
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw1",
+      "top": 200,
+      "left": -220,
+      "attrs": {},
+      "label": "Wallet (GPIO13)"
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw2",
+      "top": 260,
+      "left": -220,
+      "attrs": {},
+      "label": "Keys (GPIO12)"
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw3",
+      "top": 320,
+      "left": -220,
+      "attrs": {},
+      "label": "Umbrella (GPIO14)"
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw4",
+      "top": 380,
+      "left": -220,
+      "attrs": {},
+      "label": "ID Card (GPIO26)"
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw5",
+      "top": 440,
+      "left": -220,
+      "attrs": {},
+      "label": "Laptop Bag (GPIO33)"
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 200,
+      "left": -80,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 260,
+      "left": -80,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r3",
+      "top": 320,
+      "left": -80,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r4",
+      "top": 380,
+      "left": -80,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r5",
+      "top": 440,
+      "left": -80,
+      "attrs": { "value": "10000" }
+    }
+  ],
+  "connections": [
+    ["esp:GND.1", "pir:GND", "black", []],
+    ["esp:3V3", "pir:VCC", "red", []],
+    ["esp:27", "pir:OUT", "green", []],
+
+    ["esp:GND.2", "bz:GND", "black", []],
+    ["esp:25", "bz:1", "blue", []],
+
+    ["esp:GND.3", "oled:GND", "black", []],
+    ["esp:3V3", "oled:VCC", "red", []],
+    ["esp:21", "oled:SDA", "yellow", []],
+    ["esp:22", "oled:SCL", "purple", []],
+
+    ["esp:GND.4", "sw1:1", "black", []],
+    ["sw1:2", "r1:1", "gray", []],
+    ["r1:2", "esp:13", "gray", []],
+
+    ["esp:GND.4", "sw2:1", "black", []],
+    ["sw2:2", "r2:1", "gray", []],
+    ["r2:2", "esp:12", "gray", []],
+
+    ["esp:GND.4", "sw3:1", "black", []],
+    ["sw3:2", "r3:1", "gray", []],
+    ["r3:2", "esp:14", "gray", []],
+
+    ["esp:GND.4", "sw4:1", "black", []],
+    ["sw4:2", "r4:1", "gray", []],
+    ["r4:2", "esp:26", "gray", []],
+
+    ["esp:GND.4", "sw5:1", "black", []],
+    ["sw5:2", "r5:1", "gray", []],
+    ["r5:2", "esp:33", "gray", []]
+  ]
+}
