@@ -162,7 +162,7 @@ bool callBackend(String epcs[], int epcCount) {
   HTTPClient http;
   http.begin(wcs, BACKEND_URL);
   http.addHeader("Content-Type", "application/json");
-  http.setTimeout(20000);  // 20 s — Render free tier may cold-start
+  http.setTimeout(60000);  // 60 s — Render free tier cold-start can take ~60 s
 
   // Build {"device_key":"...","scanned_epcs":["E200...",...]}
   StaticJsonDocument<768> doc;
@@ -172,6 +172,7 @@ bool callBackend(String epcs[], int epcCount) {
 
   String body;
   serializeJson(doc, body);
+  showOled("Contacting", "server...");
   Serial.printf("  POST %s\n  Body: %s\n", BACKEND_URL, body.c_str());
 
   int code = http.POST(body);
