@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, Modal, Pressable,
-  ScrollView, StyleSheet, Switch, Text, TextInput, View,
+  RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View,
 } from 'react-native';
 import {
   addTagToList, createList, deleteList, getLists, getTags,
@@ -17,12 +17,24 @@ export default function ListsScreen() {
   const [nameInput, setNameInput] = useState('');
   const [tagModal, setTagModal] = useState<string | null>(null); // listId
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   const load = useCallback(async () => {
-    const [ls, ts] = await Promise.all([getLists(), getTags()]);
-    setLists(ls);
-    setAllTags(ts);
-    setLoading(false);
+    try {
+      const [ls, ts] = await Promise.all([getLists(), getTags()]);
+      setLists(ls);
+      setAllTags(ts);
+    } catch (e) {
+      Alert.alert('Connection error', 'Could not reach the server. Pull down to retry.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, []);
@@ -84,6 +96,7 @@ export default function ListsScreen() {
           data={lists}
           keyExtractor={(l) => l.id}
           contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e94560" />}
           ListEmptyComponent={<Text style={s.muted}>No lists yet — tap + to create one</Text>}
           renderItem={({ item }) => (
             <View style={s.card}>
