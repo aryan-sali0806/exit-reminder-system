@@ -16,29 +16,29 @@
   "connections": [
     ["esp:GND.1",  "pir:GND",  "black",  []],
     ["esp:3V3",    "pir:VCC",  "red",    []],
-    ["esp:27",     "pir:OUT",  "green",  []],
+    ["esp:D27",    "pir:OUT",  "green",  []],
 
     ["esp:GND.1",  "bz:2",     "black",  []],
-    ["esp:25",     "bz:1",     "blue",   []],
+    ["esp:D25",    "bz:1",     "blue",   []],
 
     ["esp:GND.1",  "oled:GND", "black",  []],
-    ["esp:3V3",    "oled:VCC", "red",    []],
-    ["esp:21",     "oled:SDA", "yellow", []],
-    ["esp:22",     "oled:SCL", "purple", []],
+    ["esp:3V3",    "oled:VIN", "red",    []],
+    ["esp:D21",    "oled:SDA", "yellow", []],
+    ["esp:D22",    "oled:SCL", "purple", []],
 
     ["esp:GND.1",  "sw1:1",    "black",  []],
-    ["esp:13",     "sw1:2",    "gray",   []],
+    ["esp:D13",    "sw1:2",    "gray",   []],
 
     ["esp:GND.1",  "sw2:1",    "black",  []],
-    ["esp:12",     "sw2:2",    "gray",   []],
+    ["esp:D12",    "sw2:2",    "gray",   []],
 
     ["esp:GND.1",  "sw3:1",    "black",  []],
-    ["esp:14",     "sw3:2",    "gray",   []],
+    ["esp:D14",    "sw3:2",    "gray",   []],
 
     ["esp:GND.1",  "sw4:1",    "black",  []],
-    ["esp:26",     "sw4:2",    "gray",   []],
+    ["esp:D26",    "sw4:2",    "gray",   []],
 
     ["esp:GND.1",  "sw5:1",    "black",  []],
-    ["esp:33",     "sw5:2",    "gray",   []]
+    ["esp:D33",    "sw5:2",    "gray",   []]
   ]
 }

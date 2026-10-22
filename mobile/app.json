@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Exit Reminder",
+    "slug": "exit-reminder",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "exitreminder",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.exitreminder.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

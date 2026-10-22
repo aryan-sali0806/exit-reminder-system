@@ -61,6 +61,9 @@ const TagSim TAGS[] = {
 };
 const int NUM_TAGS = sizeof(TAGS) / sizeof(TAGS[0]);
 
+// ── Forward declarations ─────────────────────────────────────────
+void showOled(const char* line1, const char* line2 = "");
+
 // ── State ────────────────────────────────────────────────────────
 unsigned long lastTrigger = 0;
 const unsigned long COOLDOWN = 10000;
@@ -99,7 +102,7 @@ void setup() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-void showOled(const char* line1, const char* line2 = "") {
+void showOled(const char* line1, const char* line2) {
   oled.clearDisplay();
   oled.setTextSize(1);
   oled.setTextColor(SSD1306_WHITE);
