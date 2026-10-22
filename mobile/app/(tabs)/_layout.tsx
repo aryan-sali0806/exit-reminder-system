@@ -3,40 +3,63 @@ import { Tabs } from 'expo-router';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-function icon(focused: boolean, name: IconName, outlineName: IconName) {
-  return <Ionicons name={focused ? name : outlineName} size={24} color={focused ? '#e94560' : '#888'} />;
+function TabIcon({ focused, name, outline }: { focused: boolean; name: IconName; outline: IconName }) {
+  return <Ionicons name={focused ? name : outline} size={23} color={focused ? '#e94560' : '#6e7681'} />;
 }
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#1a1a2e' },
-        headerTintColor: '#fff',
-        tabBarStyle: { backgroundColor: '#16213e', borderTopColor: '#0f3460' },
+        headerStyle: { backgroundColor: '#0d1117', shadowColor: 'transparent', elevation: 0 },
+        headerTintColor: '#e6edf3',
+        headerTitleStyle: { fontWeight: '800', fontSize: 18 },
+        tabBarStyle: {
+          backgroundColor: '#161b22',
+          borderTopColor: '#21262d',
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+        },
         tabBarActiveTintColor: '#e94560',
-        tabBarInactiveTintColor: '#888',
+        tabBarInactiveTintColor: '#6e7681',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
       <Tabs.Screen
         name="dashboard"
-        options={{ title: 'Dashboard', tabBarIcon: ({ focused }) => icon(focused, 'home', 'home-outline') }}
+        options={{
+          title: 'Dashboard',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="home" outline="home-outline" />,
+        }}
       />
       <Tabs.Screen
         name="tags"
-        options={{ title: 'Tags', tabBarIcon: ({ focused }) => icon(focused, 'pricetag', 'pricetag-outline') }}
+        options={{
+          title: 'Tags',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="pricetag" outline="pricetag-outline" />,
+        }}
       />
       <Tabs.Screen
         name="lists"
-        options={{ title: 'Lists', tabBarIcon: ({ focused }) => icon(focused, 'list', 'list-outline') }}
+        options={{
+          title: 'Lists',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="albums" outline="albums-outline" />,
+        }}
       />
       <Tabs.Screen
         name="history"
-        options={{ title: 'History', tabBarIcon: ({ focused }) => icon(focused, 'time', 'time-outline') }}
+        options={{
+          title: 'History',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="time" outline="time-outline" />,
+        }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: 'Settings', tabBarIcon: ({ focused }) => icon(focused, 'settings', 'settings-outline') }}
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="settings" outline="settings-outline" />,
+        }}
       />
     </Tabs>
   );

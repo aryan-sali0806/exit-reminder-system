@@ -97,7 +97,13 @@ export default function ListsScreen() {
           keyExtractor={(l) => l.id}
           contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e94560" />}
-          ListEmptyComponent={<Text style={s.muted}>No lists yet — tap + to create one</Text>}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', marginTop: 60, gap: 10 }}>
+              <Ionicons name="albums-outline" size={48} color="#333" />
+              <Text style={{ color: '#8b949e', fontSize: 18, fontWeight: '700' }}>No lists yet</Text>
+              <Text style={s.muted}>Tap + to create your first list</Text>
+            </View>
+          }
           renderItem={({ item }) => (
             <View style={s.card}>
               <View style={s.cardHeader}>
@@ -197,31 +203,32 @@ export default function ListsScreen() {
 }
 
 const s = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: '#1a1a2e' },
-  card: { backgroundColor: '#16213e', borderRadius: 12, padding: 14, marginBottom: 12 },
+  bg: { flex: 1, backgroundColor: '#0d1117' },
+  card: { backgroundColor: '#161b22', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#21262d' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  listName: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
-  tagCount: { color: '#888', fontSize: 13, marginBottom: 8 },
-  tagRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
-  tagName: { color: '#ccc', fontSize: 14 },
-  cardBtns: { flexDirection: 'row', marginTop: 10, gap: 8 },
-  smallBtn: { flexDirection: 'row', alignItems: 'center', padding: 6, borderRadius: 6, backgroundColor: '#1a1a2e' },
-  smallBtnTxt: { color: '#e94560', fontSize: 13 },
+  listName: { color: '#e6edf3', fontSize: 17, fontWeight: '800' },
+  tagCount: { color: '#6e7681', fontSize: 12, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  tagRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 4 },
+  tagName: { color: '#c9d1d9', fontSize: 14, fontWeight: '500' },
+  cardBtns: { flexDirection: 'row', marginTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: '#21262d', paddingTop: 12 },
+  smallBtn: { flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 8, backgroundColor: '#21262d', gap: 4 },
+  smallBtnTxt: { color: '#e94560', fontSize: 13, fontWeight: '600' },
   fab: {
     position: 'absolute', bottom: 24, right: 24, backgroundColor: '#e94560',
-    width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 6,
+    width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center',
+    elevation: 8, shadowColor: '#e94560', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
   },
-  muted: { color: '#888', textAlign: 'center', marginVertical: 20, fontSize: 15 },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#16213e', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
-  sheetTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  muted: { color: '#6e7681', textAlign: 'center', marginVertical: 20, fontSize: 14 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: '#161b22', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  sheetTitle: { color: '#e6edf3', fontSize: 20, fontWeight: '800', marginBottom: 20 },
   input: {
-    backgroundColor: '#1a1a2e', color: '#fff', padding: 13, borderRadius: 10,
-    marginBottom: 14, fontSize: 15, borderWidth: 1, borderColor: '#0f3460',
+    backgroundColor: '#0d1117', color: '#e6edf3', padding: 14, borderRadius: 12,
+    marginBottom: 16, fontSize: 15, borderWidth: 1, borderColor: '#30363d',
   },
   sheetBtns: { flexDirection: 'row', gap: 10 },
-  sheetBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center' },
-  tagPickRow: { padding: 14, borderBottomWidth: 1, borderBottomColor: '#0f3460' },
-  tagPickName: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  tagPickEpc: { color: '#888', fontSize: 12, marginTop: 2 },
+  sheetBtn: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
+  tagPickRow: { padding: 14, borderBottomWidth: 1, borderBottomColor: '#21262d' },
+  tagPickName: { color: '#e6edf3', fontSize: 16, fontWeight: '600' },
+  tagPickEpc: { color: '#6e7681', fontSize: 12, marginTop: 2, fontFamily: 'monospace' },
 });

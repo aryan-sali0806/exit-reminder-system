@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -8,15 +9,24 @@ export default function SettingsScreen() {
   const [user, setUser] = useState<{ email: string; device_key: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [regen, setRegen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     getMe().then(setUser).finally(() => setLoading(false));
   }, []);
 
+  async function handleCopy() {
+    if (user?.device_key) {
+      await Clipboard.setStringAsync(user.device_key);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
   async function handleRegenerate() {
     Alert.alert(
       'Regenerate device key?',
-      'Your current key will stop working immediately. Update DEVICE_KEY in the Wokwi sketch.',
+      'Your current key will stop working immediately. You must update DEVICE_KEY in the Wokwi sketch.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -39,61 +49,108 @@ export default function SettingsScreen() {
     router.replace('/(auth)/login');
   }
 
-  if (loading) return <ActivityIndicator color="#e94560" style={{ flex: 1, backgroundColor: '#1a1a2e' }} />;
+  if (loading) {
+    return (
+      <View style={[s.bg, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator color="#e94560" size="large" />
+      </View>
+    );
+  }
+
+  const initials = user?.email?.slice(0, 2).toUpperCase() ?? '??';
 
   return (
     <ScrollView style={s.bg} contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-      <Text style={s.sectionTitle}>Account</Text>
-      <View style={s.infoRow}>
-        <Text style={s.label}>Email</Text>
-        <Text style={s.value}>{user?.email}</Text>
+      {/* Avatar */}
+      <View style={s.avatarSection}>
+        <View style={s.avatar}>
+          <Text style={s.avatarText}>{initials}</Text>
+        </View>
+        <Text style={s.email}>{user?.email}</Text>
+        <Text style={s.emailLabel}>Logged in account</Text>
       </View>
 
-      <Text style={[s.sectionTitle, { marginTop: 28 }]}>Device Key</Text>
-      <Text style={s.hint}>
-        Copy this into the <Text style={{ fontFamily: 'monospace' }}>DEVICE_KEY</Text> constant in
-        your Wokwi sketch. It identifies your ESP32 to the backend.
-      </Text>
-      <Pressable
-        style={s.keyBox}
-        onPress={async () => {
-          if (user?.device_key) {
-            await Clipboard.setStringAsync(user.device_key);
-            Alert.alert('Copied', 'Device key copied to clipboard');
-          }
-        }}
-      >
-        <Text style={s.keyText}>{user?.device_key ?? '—'}</Text>
-        <Text style={s.tapHint}>Tap to copy</Text>
-      </Pressable>
+      {/* Device Key */}
+      <Text style={s.sectionLabel}>Device Key</Text>
+      <View style={s.section}>
+        <View style={s.sectionRow}>
+          <Ionicons name="key-outline" size={18} color="#8b949e" />
+          <Text style={s.sectionRowLabel}>ESP32 Auth Key</Text>
+        </View>
+        <View style={s.keyBox}>
+          <Text style={s.keyText} numberOfLines={1}>{user?.device_key ?? '—'}</Text>
+        </View>
+        <Text style={s.hint}>Paste this into <Text style={s.mono}>DEVICE_KEY</Text> in your Wokwi sketch.</Text>
+        <Pressable style={[s.copyBtn, copied && s.copyBtnSuccess]} onPress={handleCopy}>
+          <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={copied ? '#4caf50' : '#e94560'} />
+          <Text style={[s.copyTxt, { color: copied ? '#4caf50' : '#e94560' }]}>
+            {copied ? 'Copied!' : 'Copy to clipboard'}
+          </Text>
+        </Pressable>
+      </View>
 
-      <Pressable style={s.dangerBtn} onPress={handleRegenerate} disabled={regen}>
-        {regen
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={s.dangerTxt}>Regenerate device key</Text>}
-      </Pressable>
-      <Text style={s.hint}>After regenerating, update the Wokwi sketch and redeploy.</Text>
+      {/* Danger zone */}
+      <Text style={s.sectionLabel}>Danger Zone</Text>
+      <View style={s.section}>
+        <Pressable style={s.dangerRow} onPress={handleRegenerate} disabled={regen}>
+          <View style={s.dangerIcon}>
+            {regen
+              ? <ActivityIndicator color="#e94560" size="small" />
+              : <Ionicons name="refresh-outline" size={18} color="#e94560" />}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.dangerTitle}>Regenerate device key</Text>
+            <Text style={s.dangerHint}>Current key stops working immediately</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#6e7681" />
+        </Pressable>
 
-      <Pressable style={[s.dangerBtn, { marginTop: 28, backgroundColor: '#333' }]} onPress={handleLogout}>
-        <Text style={s.dangerTxt}>Log out</Text>
-      </Pressable>
+        <View style={s.divider} />
+
+        <Pressable style={s.dangerRow} onPress={handleLogout}>
+          <View style={[s.dangerIcon, { backgroundColor: '#21262d' }]}>
+            <Ionicons name="log-out-outline" size={18} color="#8b949e" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.dangerTitle, { color: '#e6edf3' }]}>Log out</Text>
+            <Text style={s.dangerHint}>Sign out of this account</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#6e7681" />
+        </Pressable>
+      </View>
+
+      <Text style={s.footer}>Smart Exit Reminder · Stage 2 · PCCOE Pune</Text>
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: '#1a1a2e' },
-  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#16213e', padding: 14, borderRadius: 10 },
-  label: { color: '#888', fontSize: 14 },
-  value: { color: '#fff', fontSize: 14 },
-  hint: { color: '#888', fontSize: 13, marginBottom: 10, lineHeight: 18 },
-  keyBox: {
-    backgroundColor: '#16213e', borderRadius: 10, padding: 16, marginBottom: 14,
-    alignItems: 'center', borderWidth: 1, borderColor: '#0f3460',
-  },
-  keyText: { color: '#e94560', fontSize: 15, fontFamily: 'monospace', letterSpacing: 1 },
-  tapHint: { color: '#888', fontSize: 12, marginTop: 6 },
-  dangerBtn: { backgroundColor: '#e94560', padding: 15, borderRadius: 10, alignItems: 'center' },
-  dangerTxt: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  bg: { flex: 1, backgroundColor: '#0d1117' },
+
+  avatarSection: { alignItems: 'center', paddingVertical: 28 },
+  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#e9456022', borderWidth: 2, borderColor: '#e94560', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  avatarText: { color: '#e94560', fontSize: 24, fontWeight: '800' },
+  email: { color: '#e6edf3', fontSize: 16, fontWeight: '600' },
+  emailLabel: { color: '#6e7681', fontSize: 13, marginTop: 4 },
+
+  sectionLabel: { color: '#6e7681', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginTop: 8 },
+  section: { backgroundColor: '#161b22', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: '#21262d' },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  sectionRowLabel: { color: '#8b949e', fontSize: 13, fontWeight: '600' },
+
+  keyBox: { backgroundColor: '#0d1117', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#30363d' },
+  keyText: { color: '#e94560', fontSize: 14, fontFamily: 'monospace', letterSpacing: 1 },
+  hint: { color: '#6e7681', fontSize: 12, lineHeight: 18, marginBottom: 12 },
+  mono: { fontFamily: 'monospace', color: '#8b949e' },
+  copyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e9456055', backgroundColor: '#e9456011' },
+  copyBtnSuccess: { borderColor: '#4caf5055', backgroundColor: '#4caf5011' },
+  copyTxt: { fontSize: 14, fontWeight: '700' },
+
+  dangerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  dangerIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#1a0a0f', justifyContent: 'center', alignItems: 'center' },
+  dangerTitle: { color: '#e94560', fontSize: 14, fontWeight: '600' },
+  dangerHint: { color: '#6e7681', fontSize: 12, marginTop: 2 },
+  divider: { height: 1, backgroundColor: '#21262d', marginVertical: 12 },
+
+  footer: { color: '#6e7681', fontSize: 12, textAlign: 'center', marginTop: 8 },
 });
