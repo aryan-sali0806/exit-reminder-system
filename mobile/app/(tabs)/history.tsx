@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View, SafeAreaView } from 'react-native';
 import { getHistory, type Event } from '../../utils/api';
 
 function fmt(iso: string) {
@@ -34,6 +34,19 @@ export default function HistoryScreen() {
 
   return (
     <View style={s.bg}>
+      {/* Page header */}
+      <View style={s.pageHeader}>
+        <View>
+          <Text style={s.pageHeaderSub}>Smart Exit Reminder</Text>
+          <Text style={s.pageHeaderTitle}>Scan History</Text>
+        </View>
+        {events.length > 0 && (
+          <View style={s.countBadge}>
+            <Text style={s.countBadgeTxt}>{events.length}</Text>
+          </View>
+        )}
+      </View>
+
       {loading ? (
         <ActivityIndicator color="#e94560" style={{ marginTop: 60 }} size="large" />
       ) : (
@@ -44,14 +57,14 @@ export default function HistoryScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e94560" />}
           ListHeaderComponent={
             events.length > 0 ? (
-              <Text style={s.listHeader}>{events.length} scan{events.length !== 1 ? 's' : ''} recorded</Text>
+              <Text style={s.listHeader}>Last {events.length} scan{events.length !== 1 ? 's' : ''}</Text>
             ) : null
           }
           ListEmptyComponent={
             <View style={s.emptyState}>
-              <Ionicons name="time-outline" size={48} color="#333" />
-              <Text style={s.emptyTitle}>No history yet</Text>
-              <Text style={s.emptyHint}>Scans will appear here after the PIR triggers</Text>
+              <Ionicons name="time-outline" size={52} color="#21262d" />
+              <Text style={s.emptyTitle}>No scans yet</Text>
+              <Text style={s.emptyHint}>Trigger the PIR sensor in Wokwi to begin.{'\n'}Each scan will be logged here.</Text>
             </View>
           }
           renderItem={({ item }) => {
@@ -102,11 +115,26 @@ export default function HistoryScreen() {
 
 const s = StyleSheet.create({
   bg: { flex: 1, backgroundColor: '#0d1117' },
+
+  pageHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
+    borderBottomWidth: 1, borderBottomColor: '#161b22',
+  },
+  pageHeaderSub: { color: '#6e7681', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
+  pageHeaderTitle: { color: '#e6edf3', fontSize: 22, fontWeight: '800', marginTop: 2 },
+  countBadge: {
+    backgroundColor: '#e9456022', borderRadius: 12, paddingHorizontal: 12,
+    paddingVertical: 4, borderWidth: 1, borderColor: '#e9456055',
+    justifyContent: 'center',
+  },
+  countBadgeTxt: { color: '#e94560', fontSize: 14, fontWeight: '800' },
+
   listHeader: { color: '#6e7681', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
 
-  emptyState: { alignItems: 'center', marginTop: 60, gap: 10 },
+  emptyState: { alignItems: 'center', marginTop: 80, gap: 12, paddingHorizontal: 32 },
   emptyTitle: { color: '#8b949e', fontSize: 18, fontWeight: '700' },
-  emptyHint: { color: '#6e7681', fontSize: 14, textAlign: 'center' },
+  emptyHint: { color: '#6e7681', fontSize: 14, textAlign: 'center', lineHeight: 22 },
 
   card: { backgroundColor: '#161b22', borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 3, borderWidth: 1, borderColor: '#21262d' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
@@ -118,8 +146,8 @@ const s = StyleSheet.create({
   time: { color: '#8b949e', fontSize: 12, fontWeight: '600' },
 
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-  missingChip: { backgroundColor: '#2d0a12', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#e9456033' },
-  missingChipTxt: { color: '#ff8a9b', fontSize: 12, fontWeight: '600' },
+  missingChip: { backgroundColor: '#2d0a12', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#e9456033' },
+  missingChipTxt: { color: '#ff8a9b', fontSize: 13, fontWeight: '600' },
 
   clearText: { color: '#4caf50', fontSize: 13, fontWeight: '600', marginBottom: 8 },
   required: { color: '#6e7681', fontSize: 12, marginTop: 4 },

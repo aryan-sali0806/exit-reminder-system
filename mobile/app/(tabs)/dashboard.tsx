@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getLists, getLatest, type LatestResult, type List } from '../../utils/api';
 
 export default function DashboardScreen() {
@@ -123,10 +124,14 @@ export default function DashboardScreen() {
       </View>
 
       {activeLists.length === 0 ? (
-        <View style={s.emptySection}>
-          <Ionicons name="albums-outline" size={28} color="#333" />
-          <Text style={s.muted}>No active lists — go to Lists tab and toggle one on</Text>
-        </View>
+        <Pressable style={s.emptySection} onPress={() => router.push('/(tabs)/lists')}>
+          <Ionicons name="albums-outline" size={32} color="#e94560" />
+          <Text style={s.emptySectionTitle}>No active lists</Text>
+          <Text style={s.muted}>Tap here to go to Lists and toggle one on</Text>
+          <View style={s.ctaBtn}>
+            <Text style={s.ctaBtnTxt}>Go to Lists →</Text>
+          </View>
+        </Pressable>
       ) : (
         activeLists.map((l) => (
           <View key={l.id} style={s.listCard}>
@@ -178,8 +183,18 @@ const s = StyleSheet.create({
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   sectionTitle: { color: '#e6edf3', fontSize: 16, fontWeight: '700' },
-  emptySection: { alignItems: 'center', paddingVertical: 20, gap: 8 },
-  muted: { color: '#6e7681', fontSize: 14, textAlign: 'center' },
+  emptySection: {
+    alignItems: 'center', paddingVertical: 24, gap: 8,
+    backgroundColor: '#161b22', borderRadius: 16, borderWidth: 1,
+    borderColor: '#21262d', borderStyle: 'dashed',
+  },
+  emptySectionTitle: { color: '#e6edf3', fontSize: 15, fontWeight: '700' },
+  muted: { color: '#6e7681', fontSize: 14, textAlign: 'center', paddingHorizontal: 16 },
+  ctaBtn: {
+    marginTop: 8, backgroundColor: '#e9456015', borderRadius: 10,
+    paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1, borderColor: '#e9456040',
+  },
+  ctaBtnTxt: { color: '#e94560', fontWeight: '700', fontSize: 14 },
 
   listCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#161b22', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#21262d' },
   listCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
