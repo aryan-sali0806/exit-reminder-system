@@ -90,3 +90,14 @@ class UnregisteredResponse(BaseModel):
 
 class DeviceKeyResponse(BaseModel):
     device_key: str
+
+
+class AnalyticsItem(BaseModel):
+    name: str
+    count: int
+
+
+class AnalyticsResponse(BaseModel):
+    total_scans: int
+    total_alerts: int
+    items: List[AnalyticsItem]

@@ -56,6 +56,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} name="bar-chart" outline="bar-chart-outline" />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',

@@ -100,6 +100,11 @@ export async function getUnregistered() {
   return data as { epcs: string[] };
 }
 
+export async function getAnalytics() {
+  const { data } = await api.get('/me/analytics');
+  return data as Analytics;
+}
+
 export async function regenerateDeviceKey() {
   const { data } = await api.post('/me/device-key/regenerate');
   return data as { device_key: string };
@@ -137,4 +142,15 @@ export interface Event {
   missing: string[];
   alert: boolean;
   speech: string;
+}
+
+export interface AnalyticsItem {
+  name: string;
+  count: number;
+}
+
+export interface Analytics {
+  total_scans: number;
+  total_alerts: number;
+  items: AnalyticsItem[];
 }

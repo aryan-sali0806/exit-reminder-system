@@ -9,6 +9,7 @@ from backend.app.models import (
     EventResponse,
     UnregisteredResponse,
     UserResponse,
+    AnalyticsResponse,
 )
 
 router = APIRouter(prefix="/me", tags=["me"])
@@ -56,6 +57,25 @@ async def get_history(user=Depends(get_current_user), db=Depends(get_db)):
 async def get_unregistered(user=Depends(get_current_user), db=Depends(get_db)):
     fresh = await db.users.find_one({"_id": user["_id"]})
     return UnregisteredResponse(epcs=fresh.get("unregistered_epcs_seen", []))
+
+
+@router.get("/analytics", response_model=AnalyticsResponse)
+async def get_analytics(user=Depends(get_current_user), db=Depends(get_db)):
+    uid = str(user["_id"])
+
+    total_scans = await db.events.count_documents({"user_id": uid})
+    total_alerts = await db.events.count_documents({"user_id": uid, "alert": True})
+
+    pipeline = [
+        {"$match": {"user_id": uid, "alert": True}},
+        {"$unwind": "$missing_names"},
+        {"$group": {"_id": "$missing_names", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$project": {"_id": 0, "name": "$_id", "count": 1}},
+    ]
+    items = await db.events.aggregate(pipeline).to_list(None)
+
+    return AnalyticsResponse(total_scans=total_scans, total_alerts=total_alerts, items=items)
 
 
 @router.post("/device-key/regenerate", response_model=DeviceKeyResponse)
