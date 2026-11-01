@@ -75,6 +75,8 @@ async def update_list(
         updates["name"] = req.name
     if req.active is not None:
         updates["active"] = req.active
+    if "schedule" in req.model_fields_set:
+        updates["schedule"] = req.schedule.model_dump() if req.schedule else None
     doc = await db.lists.find_one_and_update(
         {"_id": ObjectId(list_id), "user_id": uid},
         {"$set": updates},

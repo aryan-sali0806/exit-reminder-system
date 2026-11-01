@@ -43,9 +43,21 @@ class CreateListRequest(BaseModel):
     name: str = Field(min_length=1, max_length=64)
 
 
+class Schedule(BaseModel):
+    days: List[int] = Field(default_factory=lambda: list(range(7)))  # 0=Mon … 6=Sun
+    start: str = "00:00"   # HH:MM local time
+    end: str = "23:59"     # HH:MM local time
+    tz: str = "Asia/Kolkata"
+
+
+class SnoozeRequest(BaseModel):
+    minutes: int = Field(ge=1, le=480)
+
+
 class UpdateListRequest(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=64)
     active: Optional[bool] = None
+    schedule: Optional[Schedule] = None  # use model_fields_set to distinguish "not sent" vs explicit null
 
 
 class AddTagToListRequest(BaseModel):

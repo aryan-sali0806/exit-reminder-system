@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse
 
 from backend.app.database import get_db
 from backend.app.models import ScanRequest, ScanResponse, DeviceKeyResponse
-from backend.app.rule_engine import compute_required, make_speech
+from backend.app.rule_engine import compute_required, is_schedule_active, make_speech
 
 router = APIRouter(tags=["device"])
 
@@ -25,6 +25,11 @@ async def _resolve_user(device_key: str, db):
 async def _do_scan(req: ScanRequest, db) -> ScanResponse:
     user = await _resolve_user(req.device_key, db)
     uid = str(user["_id"])
+    now = datetime.now(timezone.utc)
+
+    # Check snooze
+    snoozed_until = user.get("snoozed_until")
+    is_snoozed = snoozed_until is not None and now < snoozed_until
 
     # All user tags: epc -> {name, id}
     all_tags = await db.tags.find({"user_id": uid}).to_list(None)
@@ -33,10 +38,12 @@ async def _do_scan(req: ScanRequest, db) -> ScanResponse:
     # Build a reverse map: tag_id (str) -> tag_name
     id_to_name = {info["id"]: info["name"] for info in epc_map.values()}
 
-    # Active lists with their tag names
+    # Active lists — skip those outside their schedule window
     active_lists = await db.lists.find({"user_id": uid, "active": True}).to_list(None)
     enriched = []
     for lst in active_lists:
+        if not is_schedule_active(lst.get("schedule"), now):
+            continue
         tag_names = [id_to_name[tid] for tid in lst.get("tag_ids", []) if tid in id_to_name]
         enriched.append({"tag_names": tag_names})
 
@@ -52,8 +59,13 @@ async def _do_scan(req: ScanRequest, db) -> ScanResponse:
             unregistered.append(epc)
 
     missing_names = sorted(set(required_names) - set(scanned_names))
-    speech = make_speech(missing_names)
     alert = len(missing_names) > 0
+    speech = make_speech(missing_names)
+
+    # Suppress alert output while snoozed (data still stored accurately)
+    if is_snoozed:
+        alert = False
+        speech = ""
 
     # Save event
     result = await db.events.insert_one({
@@ -63,7 +75,7 @@ async def _do_scan(req: ScanRequest, db) -> ScanResponse:
         "missing_names": missing_names,
         "alert": alert,
         "speech": speech,
-        "ts": datetime.now(timezone.utc),
+        "ts": now,
     })
 
     # Track unregistered EPCs on the user doc

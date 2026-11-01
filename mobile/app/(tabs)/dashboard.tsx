@@ -3,13 +3,14 @@ import * as Speech from 'expo-speech';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { getLists, getLatest, type LatestResult, type List } from '../../utils/api';
+import { cancelSnooze, getLists, getLatest, snooze, type LatestResult, type List } from '../../utils/api';
 
 export default function DashboardScreen() {
   const [latest, setLatest] = useState<LatestResult | null>(null);
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [snoozing, setSnoozing] = useState(false);
   const lastEventId = useRef<string | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -44,8 +45,23 @@ export default function DashboardScreen() {
     return () => clearInterval(id);
   }, [fetchData]);
 
+  async function handleSnooze(minutes: number) {
+    setSnoozing(true);
+    try { await snooze(minutes); await fetchData(); } finally { setSnoozing(false); }
+  }
+
+  async function handleCancelSnooze() {
+    setSnoozing(true);
+    try { await cancelSnooze(); await fetchData(); } finally { setSnoozing(false); }
+  }
+
+  function fmtSnoozeTime(iso: string) {
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
   const activeLists = lists.filter((l) => l.active);
   const isAlert = latest?.alert ?? false;
+  const isSnoozed = !!latest?.snoozed_until;
 
   return (
     <ScrollView
@@ -107,6 +123,34 @@ export default function DashboardScreen() {
             <Text style={s.timestamp}>
               Last scan: {new Date(latest.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
+          )}
+
+          {/* Snooze indicator */}
+          {isSnoozed && (
+            <View style={s.snoozeBanner}>
+              <Ionicons name="notifications-off-outline" size={15} color="#ffb74d" />
+              <Text style={s.snoozeBannerTxt}>Snoozed until {fmtSnoozeTime(latest.snoozed_until!)}</Text>
+              <Pressable onPress={handleCancelSnooze} disabled={snoozing} style={s.snoozeCancelBtn}>
+                <Text style={s.snoozeCancelTxt}>Cancel</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Snooze buttons — shown when alert fired and not already snoozed */}
+          {isAlert && !isSnoozed && (
+            <View style={s.snoozeRow}>
+              <Text style={s.snoozeLabel}>Snooze alert:</Text>
+              {([5, 30, 120] as const).map((m) => (
+                <Pressable
+                  key={m}
+                  style={s.snoozeBtn}
+                  onPress={() => handleSnooze(m)}
+                  disabled={snoozing}
+                >
+                  <Text style={s.snoozeBtnTxt}>{m < 60 ? `${m}m` : `${m / 60}h`}</Text>
+                </Pressable>
+              ))}
+            </View>
           )}
         </View>
       ) : (
@@ -176,6 +220,23 @@ const s = StyleSheet.create({
   missingChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#2d0a12', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#e9456055' },
   missingChipText: { color: '#ff8a9b', fontSize: 13, fontWeight: '600' },
   timestamp: { color: '#6e7681', fontSize: 12, marginTop: 4 },
+
+  snoozeBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12,
+    backgroundColor: '#2d1f0a', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+    borderWidth: 1, borderColor: '#4d3010',
+  },
+  snoozeBannerTxt: { color: '#ffb74d', fontSize: 13, flex: 1 },
+  snoozeCancelBtn: { backgroundColor: '#4d3010', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
+  snoozeCancelTxt: { color: '#ffb74d', fontSize: 12, fontWeight: '700' },
+
+  snoozeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap', justifyContent: 'center' },
+  snoozeLabel: { color: '#6e7681', fontSize: 12 },
+  snoozeBtn: {
+    backgroundColor: '#21262d', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6,
+    borderWidth: 1, borderColor: '#30363d',
+  },
+  snoozeBtnTxt: { color: '#e6edf3', fontSize: 13, fontWeight: '700' },
 
   emptyCard: { backgroundColor: '#161b22', borderRadius: 20, padding: 40, alignItems: 'center', marginBottom: 24, gap: 10, borderWidth: 1, borderColor: '#21262d' },
   emptyTitle: { color: '#8b949e', fontSize: 16, fontWeight: '700' },

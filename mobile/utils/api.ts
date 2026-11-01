@@ -65,7 +65,7 @@ export async function createList(name: string) {
   return data as List;
 }
 
-export async function updateList(listId: string, patch: { name?: string; active?: boolean }) {
+export async function updateList(listId: string, patch: { name?: string; active?: boolean; schedule?: Schedule | null }) {
   const { data } = await api.patch(`/lists/${listId}`, patch);
   return data as List;
 }
@@ -110,6 +110,14 @@ export async function regenerateDeviceKey() {
   return data as { device_key: string };
 }
 
+export async function snooze(minutes: number) {
+  await api.post('/me/snooze', { minutes });
+}
+
+export async function cancelSnooze() {
+  await api.delete('/me/snooze');
+}
+
 // ── Types ─────────────────────────────────────────────────────────
 export interface Tag {
   id: string;
@@ -123,7 +131,7 @@ export interface List {
   active: boolean;
   tag_ids: string[];
   tags?: Tag[];
-  schedule?: Record<string, unknown> | null;
+  schedule?: Schedule | null;
 }
 
 export interface LatestResult {
@@ -133,6 +141,14 @@ export interface LatestResult {
   missing: string[];
   required: string[];
   ts?: string;
+  snoozed_until?: string | null;
+}
+
+export interface Schedule {
+  days: number[];   // 0=Mon … 6=Sun
+  start: string;   // HH:MM
+  end: string;     // HH:MM
+  tz: string;
 }
 
 export interface Event {

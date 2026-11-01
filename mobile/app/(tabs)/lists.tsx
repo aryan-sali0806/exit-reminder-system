@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import {
   addTagToList, createList, deleteList, getLists, getTags,
-  removeTagFromList, updateList, type List, type Tag,
+  removeTagFromList, updateList, type List, type Schedule, type Tag,
 } from '../../utils/api';
 
 export default function ListsScreen() {
@@ -16,6 +16,12 @@ export default function ListsScreen() {
   const [nameModal, setNameModal] = useState<{ listId?: string; current?: string } | null>(null);
   const [nameInput, setNameInput] = useState('');
   const [tagModal, setTagModal] = useState<string | null>(null); // listId
+  const [scheduleModal, setScheduleModal] = useState<{ listId: string; listName: string } | null>(null);
+  const [schedEnabled, setSchedEnabled] = useState(false);
+  const [schedDays, setSchedDays] = useState<boolean[]>(Array(7).fill(true));
+  const [schedStart, setSchedStart] = useState('07:00');
+  const [schedEnd, setSchedEnd] = useState('22:00');
+  const [schedTz] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -73,6 +79,44 @@ export default function ListsScreen() {
     ]);
   }
 
+  function openScheduleModal(list: List) {
+    const sched = list.schedule as Schedule | null;
+    if (sched) {
+      const days = Array(7).fill(false);
+      sched.days.forEach((d) => { days[d] = true; });
+      setSchedEnabled(true);
+      setSchedDays(days);
+      setSchedStart(sched.start);
+      setSchedEnd(sched.end);
+    } else {
+      setSchedEnabled(false);
+      setSchedDays([true, true, true, true, true, false, false]);
+      setSchedStart('07:00');
+      setSchedEnd('22:00');
+    }
+    setScheduleModal({ listId: list.id, listName: list.name });
+  }
+
+  async function handleSaveSchedule() {
+    if (!scheduleModal) return;
+    const timeRe = /^\d{2}:\d{2}$/;
+    if (schedEnabled && (!timeRe.test(schedStart) || !timeRe.test(schedEnd))) {
+      Alert.alert('Invalid time', 'Enter times as HH:MM, e.g. 07:00');
+      return;
+    }
+    setSaving(true);
+    try {
+      const schedule: Schedule | null = schedEnabled
+        ? { days: schedDays.map((on, i) => (on ? i : -1)).filter((i) => i >= 0), start: schedStart, end: schedEnd, tz: schedTz }
+        : null;
+      const updated = await updateList(scheduleModal.listId, { schedule });
+      setLists((p) => p.map((l) => (l.id === updated.id ? updated : l)));
+      setScheduleModal(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleAddTag(listId: string, tagId: string) {
     const updated = await addTagToList(listId, tagId);
     setLists((p) => p.map((l) => (l.id === updated.id ? updated : l)));
@@ -126,10 +170,23 @@ export default function ListsScreen() {
                 </View>
               ))}
 
+              {item.schedule && (
+                <View style={s.schedBadge}>
+                  <Ionicons name="time-outline" size={12} color="#58a6ff" />
+                  <Text style={s.schedBadgeTxt}>
+                    {(item.schedule as Schedule).start}–{(item.schedule as Schedule).end}
+                    {' · '}{(item.schedule as Schedule).days.map((d) => ['M','T','W','T','F','S','S'][d]).join(' ')}
+                  </Text>
+                </View>
+              )}
+
               <View style={s.cardBtns}>
                 <Pressable style={s.smallBtn} onPress={() => setTagModal(item.id)}>
                   <Ionicons name="add" size={16} color="#e94560" />
                   <Text style={s.smallBtnTxt}> Add item</Text>
+                </Pressable>
+                <Pressable style={s.smallBtn} onPress={() => openScheduleModal(item)}>
+                  <Ionicons name="time-outline" size={16} color={item.schedule ? '#58a6ff' : '#888'} />
                 </Pressable>
                 <Pressable style={s.smallBtn} onPress={() => { setNameInput(item.name); setNameModal({ listId: item.id }); }}>
                   <Ionicons name="pencil" size={16} color="#888" />
@@ -161,6 +218,80 @@ export default function ListsScreen() {
                 <Text style={{ color: '#fff' }}>Cancel</Text>
               </Pressable>
               <Pressable style={[s.sheetBtn, { backgroundColor: '#e94560' }]} onPress={handleSaveName} disabled={saving}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Schedule modal */}
+      <Modal visible={!!scheduleModal} transparent animationType="slide">
+        <View style={s.overlay}>
+          <View style={[s.sheet, { maxHeight: '80%' }]}>
+            <Text style={s.sheetTitle}>Active hours — "{scheduleModal?.listName}"</Text>
+
+            {/* Toggle */}
+            <View style={s.schedToggleRow}>
+              <Pressable
+                style={[s.schedToggleBtn, !schedEnabled && s.schedToggleBtnActive]}
+                onPress={() => setSchedEnabled(false)}
+              >
+                <Text style={[s.schedToggleTxt, !schedEnabled && s.schedToggleTxtActive]}>Always active</Text>
+              </Pressable>
+              <Pressable
+                style={[s.schedToggleBtn, schedEnabled && s.schedToggleBtnActive]}
+                onPress={() => setSchedEnabled(true)}
+              >
+                <Text style={[s.schedToggleTxt, schedEnabled && s.schedToggleTxtActive]}>Set hours</Text>
+              </Pressable>
+            </View>
+
+            {schedEnabled && (
+              <>
+                {/* Day chips */}
+                <Text style={s.schedSectionLabel}>Active days</Text>
+                <View style={s.dayChipsRow}>
+                  {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
+                    <Pressable
+                      key={d}
+                      style={[s.dayChip, schedDays[i] && s.dayChipOn]}
+                      onPress={() => setSchedDays((p) => p.map((v, j) => (j === i ? !v : v)))}
+                    >
+                      <Text style={[s.dayChipTxt, schedDays[i] && s.dayChipTxtOn]}>{d}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {/* Time inputs */}
+                <Text style={s.schedSectionLabel}>Time window (HH:MM)</Text>
+                <View style={s.timeRow}>
+                  <View style={s.timeField}>
+                    <Text style={s.timeFieldLabel}>From</Text>
+                    <TextInput
+                      style={s.timeInput} value={schedStart} onChangeText={setSchedStart}
+                      placeholder="07:00" placeholderTextColor="#555"
+                      keyboardType="numbers-and-punctuation" maxLength={5}
+                    />
+                  </View>
+                  <View style={s.timeField}>
+                    <Text style={s.timeFieldLabel}>To</Text>
+                    <TextInput
+                      style={s.timeInput} value={schedEnd} onChangeText={setSchedEnd}
+                      placeholder="22:00" placeholderTextColor="#555"
+                      keyboardType="numbers-and-punctuation" maxLength={5}
+                    />
+                  </View>
+                </View>
+                <Text style={s.schedTzTxt}>Timezone: {schedTz}</Text>
+              </>
+            )}
+
+            <View style={[s.sheetBtns, { marginTop: 20 }]}>
+              <Pressable style={[s.sheetBtn, { backgroundColor: '#333' }]} onPress={() => setScheduleModal(null)}>
+                <Text style={{ color: '#fff' }}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[s.sheetBtn, { backgroundColor: '#e94560' }]} onPress={handleSaveSchedule} disabled={saving}>
                 {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>}
               </Pressable>
             </View>
@@ -231,4 +362,26 @@ const s = StyleSheet.create({
   tagPickRow: { padding: 14, borderBottomWidth: 1, borderBottomColor: '#21262d' },
   tagPickName: { color: '#e6edf3', fontSize: 16, fontWeight: '600' },
   tagPickEpc: { color: '#6e7681', fontSize: 12, marginTop: 2, fontFamily: 'monospace' },
+
+  schedBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8, backgroundColor: '#0d1f33', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
+  schedBadgeTxt: { color: '#58a6ff', fontSize: 11, fontWeight: '600' },
+
+  schedToggleRow: { flexDirection: 'row', backgroundColor: '#0d1117', borderRadius: 10, padding: 3, marginBottom: 20 },
+  schedToggleBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
+  schedToggleBtnActive: { backgroundColor: '#e94560' },
+  schedToggleTxt: { color: '#6e7681', fontWeight: '600', fontSize: 14 },
+  schedToggleTxtActive: { color: '#fff' },
+
+  schedSectionLabel: { color: '#6e7681', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  dayChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  dayChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: '#21262d', borderWidth: 1, borderColor: '#30363d' },
+  dayChipOn: { backgroundColor: '#e9456022', borderColor: '#e94560' },
+  dayChipTxt: { color: '#6e7681', fontSize: 13, fontWeight: '600' },
+  dayChipTxtOn: { color: '#e94560' },
+
+  timeRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  timeField: { flex: 1 },
+  timeFieldLabel: { color: '#6e7681', fontSize: 12, marginBottom: 4 },
+  timeInput: { backgroundColor: '#0d1117', color: '#e6edf3', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#30363d', fontSize: 16, fontFamily: 'monospace' },
+  schedTzTxt: { color: '#6e7681', fontSize: 11, marginBottom: 4 },
 });

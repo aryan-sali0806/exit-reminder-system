@@ -6,11 +6,12 @@ from fastapi import APIRouter, Depends
 from backend.app.auth import generate_device_key, get_current_user
 from backend.app.database import get_db
 from backend.app.models import (
+    AnalyticsResponse,
     DeviceKeyResponse,
     EventResponse,
+    SnoozeRequest,
     UnregisteredResponse,
     UserResponse,
-    AnalyticsResponse,
 )
 
 router = APIRouter(prefix="/me", tags=["me"])
@@ -24,9 +25,13 @@ async def get_me(user=Depends(get_current_user)):
 @router.get("/latest")
 async def get_latest(user=Depends(get_current_user), db=Depends(get_db)):
     uid = str(user["_id"])
+    now = datetime.now(timezone.utc)
+    snoozed_until = user.get("snoozed_until")
+    active_snooze = snoozed_until.isoformat() if (snoozed_until and now < snoozed_until) else None
+
     event = await db.events.find_one({"user_id": uid}, sort=[("ts", -1)])
     if not event:
-        return {"alert": False, "speech": "", "missing": [], "required": [], "event_id": None}
+        return {"alert": False, "speech": "", "missing": [], "required": [], "event_id": None, "snoozed_until": active_snooze}
     return {
         "event_id": str(event["_id"]),
         "alert": event["alert"],
@@ -34,6 +39,7 @@ async def get_latest(user=Depends(get_current_user), db=Depends(get_db)):
         "missing": event["missing_names"],
         "required": event["required_names"],
         "ts": event["ts"].isoformat(),
+        "snoozed_until": active_snooze,
     }
 
 
@@ -102,6 +108,17 @@ async def get_analytics(user=Depends(get_current_user), db=Depends(get_db)):
     ]
 
     return AnalyticsResponse(total_scans=total_scans, total_alerts=total_alerts, items=items, daily=daily)
+
+
+@router.post("/snooze", status_code=204)
+async def set_snooze(req: SnoozeRequest, user=Depends(get_current_user), db=Depends(get_db)):
+    until = datetime.now(timezone.utc) + timedelta(minutes=req.minutes)
+    await db.users.update_one({"_id": user["_id"]}, {"$set": {"snoozed_until": until}})
+
+
+@router.delete("/snooze", status_code=204)
+async def cancel_snooze(user=Depends(get_current_user), db=Depends(get_db)):
+    await db.users.update_one({"_id": user["_id"]}, {"$unset": {"snoozed_until": ""}})
 
 
 @router.post("/device-key/regenerate", response_model=DeviceKeyResponse)
