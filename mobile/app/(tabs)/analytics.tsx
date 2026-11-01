@@ -11,6 +11,7 @@ import {
 import { getAnalytics, type Analytics } from '../../utils/api';
 
 const BAR_COLORS = ['#e94560', '#e05575', '#c45e7a', '#a8677f', '#8b7085'];
+const BAR_MAX_H = 80;
 
 export default function AnalyticsScreen() {
   const [data, setData] = useState<Analytics | null>(null);
@@ -34,6 +35,11 @@ export default function AnalyticsScreen() {
   useEffect(() => { load(); }, []);
 
   const maxCount = data?.items?.[0]?.count ?? 1;
+  const maxExits = data ? Math.max(...data.daily.map((d) => d.exits), 1) : 1;
+
+  function dayLabel(iso: string) {
+    return new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' });
+  }
 
   return (
     <View style={s.bg}>
@@ -76,7 +82,44 @@ export default function AnalyticsScreen() {
             </View>
           )}
 
-          {/* Bar chart */}
+          {/* Daily activity chart */}
+          {data && (
+            <View style={[s.section, { marginBottom: 16 }]}>
+              <Text style={s.sectionTitle}>Last 7 Days</Text>
+              <Text style={s.sectionSub}>Exits per day — red portion triggered an alert</Text>
+              <View style={s.dailyChart}>
+                {data.daily.map((day) => {
+                  const totalH = (day.exits / maxExits) * BAR_MAX_H;
+                  const alertH = day.exits > 0 ? (day.alerts / day.exits) * totalH : 0;
+                  const clearH = totalH - alertH;
+                  return (
+                    <View key={day.date} style={s.dailyCol}>
+                      <View style={s.dailyBarWrap}>
+                        {day.exits === 0 ? (
+                          <View style={s.dailyEmpty} />
+                        ) : (
+                          <View style={{ width: 22, height: totalH, borderRadius: 5, overflow: 'hidden', justifyContent: 'flex-end' }}>
+                            <View style={{ width: '100%', height: clearH, backgroundColor: '#4caf50' }} />
+                            <View style={{ width: '100%', height: alertH, backgroundColor: '#e94560' }} />
+                          </View>
+                        )}
+                      </View>
+                      <Text style={s.dailyCount}>{day.exits > 0 ? day.exits : ''}</Text>
+                      <Text style={s.dailyLabel}>{dayLabel(day.date)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <View style={s.legend}>
+                <View style={s.legendDot} />
+                <Text style={s.legendTxt}>Alert</Text>
+                <View style={[s.legendDot, { backgroundColor: '#4caf50' }]} />
+                <Text style={s.legendTxt}>Clear</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Forget frequency bar chart */}
           <View style={s.section}>
             <Text style={s.sectionTitle}>Forget Frequency</Text>
             <Text style={s.sectionSub}>How often each item was missing across all exits</Text>
@@ -149,4 +192,15 @@ const s = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 12 },
   emptyTitle: { color: '#8b949e', fontSize: 18, fontWeight: '700' },
   emptyHint: { color: '#6e7681', fontSize: 14, textAlign: 'center', lineHeight: 22, paddingHorizontal: 16 },
+
+  dailyChart: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 },
+  dailyCol: { alignItems: 'center', flex: 1 },
+  dailyBarWrap: { height: BAR_MAX_H, justifyContent: 'flex-end', alignItems: 'center' },
+  dailyEmpty: { width: 22, height: 3, backgroundColor: '#21262d', borderRadius: 2 },
+  dailyCount: { color: '#6e7681', fontSize: 10, marginTop: 4 },
+  dailyLabel: { color: '#8b949e', fontSize: 11, fontWeight: '600', marginTop: 2 },
+
+  legend: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  legendDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#e94560' },
+  legendTxt: { color: '#6e7681', fontSize: 11, marginRight: 10 },
 });

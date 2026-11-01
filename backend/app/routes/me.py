@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends
@@ -75,7 +76,32 @@ async def get_analytics(user=Depends(get_current_user), db=Depends(get_db)):
     ]
     items = await db.events.aggregate(pipeline).to_list(None)
 
-    return AnalyticsResponse(total_scans=total_scans, total_alerts=total_alerts, items=items)
+    # Last 7 days: count exits and alerts per calendar day
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=6)
+    daily_pipeline = [
+        {"$match": {"user_id": uid, "ts": {"$gte": seven_days_ago}}},
+        {
+            "$group": {
+                "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$ts"}},
+                "exits": {"$sum": 1},
+                "alerts": {"$sum": {"$cond": ["$alert", 1, 0]}},
+            }
+        },
+        {"$sort": {"_id": 1}},
+    ]
+    daily_raw = await db.events.aggregate(daily_pipeline).to_list(None)
+    daily_map = {d["_id"]: d for d in daily_raw}
+    today = datetime.now(timezone.utc).date()
+    daily = [
+        {
+            "date": (today - timedelta(days=i)).isoformat(),
+            "exits": daily_map.get((today - timedelta(days=i)).isoformat(), {}).get("exits", 0),
+            "alerts": daily_map.get((today - timedelta(days=i)).isoformat(), {}).get("alerts", 0),
+        }
+        for i in range(6, -1, -1)
+    ]
+
+    return AnalyticsResponse(total_scans=total_scans, total_alerts=total_alerts, items=items, daily=daily)
 
 
 @router.post("/device-key/regenerate", response_model=DeviceKeyResponse)

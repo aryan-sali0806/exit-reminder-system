@@ -149,8 +149,15 @@ export interface AnalyticsItem {
   count: number;
 }
 
+export interface DailyEntry {
+  date: string;  // YYYY-MM-DD
+  exits: number;
+  alerts: number;
+}
+
 export interface Analytics {
   total_scans: number;
   total_alerts: number;
   items: AnalyticsItem[];
+  daily: DailyEntry[];
 }

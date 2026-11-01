@@ -97,7 +97,14 @@ class AnalyticsItem(BaseModel):
     count: int
 
 
+class DailyEntry(BaseModel):
+    date: str
+    exits: int
+    alerts: int
+
+
 class AnalyticsResponse(BaseModel):
     total_scans: int
     total_alerts: int
     items: List[AnalyticsItem]
+    daily: List[DailyEntry]
